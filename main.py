@@ -1,7 +1,12 @@
 from app.auth import get_access_token
+
 from app.graph import get_drives
-from app.config import SITE_ID
+
 from app.sharepoint import crawl_drive
+
+from app.monitor import Monitor
+
+from app.config import SITE_ID
 
 
 def main():
@@ -9,12 +14,12 @@ def main():
     token = get_access_token()
 
     if "access_token" not in token:
+
         print(token)
+
         return
 
     access_token = token["access_token"]
-
-    print("\nAuthentication Successful!\n")
 
     drives = get_drives(
         SITE_ID,
@@ -23,43 +28,43 @@ def main():
 
     drive_id = None
 
-    print("=" * 80)
-    print("DOCUMENT LIBRARIES")
-    print("=" * 80)
-
     for drive in drives["value"]:
 
-        print(f"Name : {drive['name']}")
-        print(f"ID   : {drive['id']}")
-        print("-" * 80)
-
         if drive["driveType"] == "documentLibrary":
+
             drive_id = drive["id"]
 
-    if drive_id is None:
-        print("No document library found.")
-        return
+            break
 
-    print()
+    files = crawl_drive(
 
-    print("=" * 80)
-    print("RECURSIVE SHAREPOINT CRAWL")
-    print("=" * 80)
-
-    all_files = crawl_drive(
         drive_id,
-        access_token
+
+        access_token,
+
+        SITE_ID
+
     )
 
+    monitor = Monitor()
+
+    inserted, skipped = monitor.sync(files)
+
     print()
 
-    print("=" * 80)
-    print(f"TOTAL FILES FOUND : {len(all_files)}")
-    print("=" * 80)
+    print("=" * 60)
 
-    for file in all_files:
-        print(file["path"])
+    print("SCAN SUMMARY")
+
+    print("=" * 60)
+
+    print(f"Files Found      : {len(files)}")
+
+    print(f"Inserted         : {inserted}")
+
+    print(f"Already Present  : {skipped}")
 
 
 if __name__ == "__main__":
+
     main()
