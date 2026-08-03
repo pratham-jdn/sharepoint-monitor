@@ -1,9 +1,7 @@
-from auth import get_access_token
-from graph import (
-    get_drives,
-    get_drive_items
-)
-from config import SITE_ID
+from app.auth import get_access_token
+from app.graph import get_drives
+from app.config import SITE_ID
+from app.sharepoint import crawl_drive
 
 
 def main():
@@ -23,17 +21,16 @@ def main():
         access_token
     )
 
+    drive_id = None
+
     print("=" * 80)
     print("DOCUMENT LIBRARIES")
     print("=" * 80)
 
-    drive_id = None
-
     for drive in drives["value"]:
 
-        print(f"Name       : {drive['name']}")
-        print(f"Drive ID   : {drive['id']}")
-        print(f"Drive Type : {drive['driveType']}")
+        print(f"Name : {drive['name']}")
+        print(f"ID   : {drive['id']}")
         print("-" * 80)
 
         if drive["driveType"] == "documentLibrary":
@@ -43,29 +40,25 @@ def main():
         print("No document library found.")
         return
 
-    print("\n")
+    print()
 
     print("=" * 80)
-    print("FILES AND FOLDERS")
+    print("RECURSIVE SHAREPOINT CRAWL")
     print("=" * 80)
 
-    items = get_drive_items(
+    all_files = crawl_drive(
         drive_id,
         access_token
     )
 
-    for item in items["value"]:
+    print()
 
-        if "folder" in item:
-            print(f"📁 {item['name']}")
-        else:
-            print(f"📄 {item['name']}")
+    print("=" * 80)
+    print(f"TOTAL FILES FOUND : {len(all_files)}")
+    print("=" * 80)
 
-        print(f"ID           : {item['id']}")
-        print(f"Last Modified: {item['lastModifiedDateTime']}")
-        print(f"Size         : {item['size']} bytes")
-
-        print("-" * 80)
+    for file in all_files:
+        print(file["path"])
 
 
 if __name__ == "__main__":

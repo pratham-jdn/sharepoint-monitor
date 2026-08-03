@@ -1,6 +1,6 @@
 from msal import ConfidentialClientApplication
 
-from config import (
+from app.config import (
     CLIENT_ID,
     CLIENT_SECRET,
     AUTHORITY,
