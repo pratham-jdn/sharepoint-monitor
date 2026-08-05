@@ -1,49 +1,37 @@
 import requests
 
+from app.config.config import Config
 
-GRAPH_BASE_URL = "https://graph.microsoft.com/v1.0"
 
+class GraphClient:
 
-def call_graph_api(endpoint, access_token):
+    def __init__(self, access_token):
 
-    headers = {
-        "Authorization": f"Bearer {access_token}"
-    }
+        self.headers = {
 
-    response = requests.get(endpoint, headers=headers)
+            "Authorization": (
+                f"Bearer {access_token}"
+            )
+        }
 
-    if response.status_code == 200:
+    def get(self, endpoint):
+
+        response = requests.get(
+
+            Config.GRAPH_BASE_URL + endpoint,
+
+            headers=self.headers
+        )
+
+        if response.status_code != 200:
+
+            raise Exception(
+
+                f"Graph API Error\n"
+
+                f"{response.status_code}\n"
+
+                f"{response.text}"
+            )
+
         return response.json()
-
-    raise Exception(
-        f"\nGraph API Error\n"
-        f"Status Code : {response.status_code}\n"
-        f"Response    : {response.text}"
-    )
-
-
-def get_drives(site_id, access_token):
-
-    endpoint = f"{GRAPH_BASE_URL}/sites/{site_id}/drives"
-
-    return call_graph_api(endpoint, access_token)
-
-
-def get_root_items(drive_id, access_token):
-
-    endpoint = (
-        f"{GRAPH_BASE_URL}/drives/"
-        f"{drive_id}/root/children"
-    )
-
-    return call_graph_api(endpoint, access_token)
-
-
-def get_folder_items(drive_id, folder_id, access_token):
-
-    endpoint = (
-        f"{GRAPH_BASE_URL}/drives/"
-        f"{drive_id}/items/{folder_id}/children"
-    )
-
-    return call_graph_api(endpoint, access_token)

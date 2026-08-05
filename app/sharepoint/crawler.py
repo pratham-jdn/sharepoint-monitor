@@ -1,101 +1,169 @@
-from app.graph import (
-    get_root_items,
-    get_folder_items
-)
+from app.graph.client import GraphClient
+from app.models.file_metadata import FileMetadata
 
 
-def crawl_drive(
-    drive_id,
-    access_token,
-    site_id,
-    folder_id=None,
-    current_path="",
-    files=None
-):
+class SharePointCrawler:
 
-    if files is None:
-        files = []
+    def __init__(self, graph_client: GraphClient):
 
-    if folder_id is None:
+        self.graph = graph_client
 
-        response = get_root_items(
-            drive_id,
-            access_token
+    def get_document_library(self, site_id):
+
+        response = self.graph.get(
+            f"/sites/{site_id}/drives"
         )
 
-    else:
+        for drive in response["value"]:
 
-        response = get_folder_items(
-            drive_id,
-            folder_id,
-            access_token
+            if drive["driveType"] == "documentLibrary":
+
+                return drive
+
+        raise Exception(
+            "Document Library not found."
         )
 
-    for item in response["value"]:
+    def crawl_drive(self, drive, files=None):
 
-        if "folder" in item:
+        if files is None:
 
-            next_path = (
+            files = []
+
+        self.__crawl_folder(
+
+            drive["id"],
+
+            "root",
+
+            "",
+
+            drive["id"],
+
+            drive.get("sharepointIds", {}).get("siteId", ""),
+
+            files
+
+        )
+
+        return files
+
+    def __crawl_folder(
+
+        self,
+
+        drive_id,
+
+        folder_id,
+
+        current_path,
+
+        current_drive,
+
+        current_site,
+
+        files
+
+    ):
+
+        response = self.graph.get(
+
+            f"/drives/{drive_id}/items/{folder_id}/children"
+
+        )
+
+        for item in response["value"]:
+
+            path = (
+
                 f"{current_path}/{item['name']}"
+
                 if current_path
+
                 else item["name"]
-            )
-
-            crawl_drive(
-
-                drive_id,
-
-                access_token,
-
-                site_id,
-
-                item["id"],
-
-                next_path,
-
-                files
 
             )
 
-        else:
+            is_folder = "folder" in item
 
-            files.append({
+            files.append(
 
-                "id": item["id"],
+                FileMetadata(
 
-                "name": item["name"],
+                    file_id=item["id"],
 
-                "parent_path": current_path,
+                    name=item["name"],
 
-                "size": item.get("size"),
+                    item_type="Folder" if is_folder else "File",
 
-                "etag": item.get("eTag"),
+                    parent_path=current_path,
 
-                "ctag": item.get("cTag"),
+                    web_url=item.get("webUrl"),
 
-                "created": item.get("createdDateTime"),
+                    drive_id=current_drive,
 
-                "modified": item.get("lastModifiedDateTime"),
+                    site_id=current_site,
 
-                "created_by":
-                    item.get("createdBy", {})
-                        .get("user", {})
-                        .get("displayName"),
+                    size=item.get("size", 0),
 
-                "modified_by":
-                    item.get("lastModifiedBy", {})
-                        .get("user", {})
-                        .get("displayName"),
+                    etag=item.get("eTag"),
 
-                "web_url":
-                    item.get("webUrl"),
+                    ctag=item.get("cTag"),
 
-                "drive_id":
+                    created_date=item.get(
+                        "createdDateTime"
+                    ),
+
+                    modified_date=item.get(
+                        "lastModifiedDateTime"
+                    ),
+
+                    created_by=item.get(
+                        "createdBy",
+                        {}
+                    ).get(
+                        "user",
+                        {}
+                    ).get(
+                        "displayName"
+                    ),
+
+                    modified_by=item.get(
+                        "lastModifiedBy",
+                        {}
+                    ).get(
+                        "user",
+                        {}
+                    ).get(
+                        "displayName"
+                    ),
+
+                    downloaded=False,
+
+                    download_path=None,
+
+                    status="Active",
+
+                    last_scan=None
+
+                )
+
+            )
+
+            if is_folder:
+
+                self.__crawl_folder(
+
                     drive_id,
 
-                "site_id":
-                    site_id
+                    item["id"],
 
-            })
+                    path,
 
-    return files
+                    current_drive,
+
+                    current_site,
+
+                    files
+
+                )

@@ -1,23 +1,39 @@
 from msal import ConfidentialClientApplication
 
-from app.config import (
-    CLIENT_ID,
-    CLIENT_SECRET,
-    AUTHORITY,
-    GRAPH_SCOPE
-)
+from app.config.config import Config
+from app.utils.logger import logger
 
 
-def get_access_token():
+class AuthService:
 
-    app = ConfidentialClientApplication(
-        client_id=CLIENT_ID,
-        client_credential=CLIENT_SECRET,
-        authority=AUTHORITY
-    )
+    def __init__(self):
 
-    token = app.acquire_token_for_client(
-        scopes=GRAPH_SCOPE
-    )
+        self.app = ConfidentialClientApplication(
 
-    return token
+            client_id=Config.CLIENT_ID,
+
+            client_credential=Config.CLIENT_SECRET,
+
+            authority=Config.AUTHORITY
+        )
+
+    def get_access_token(self):
+
+        token = self.app.acquire_token_for_client(
+
+            scopes=Config.GRAPH_SCOPE
+        )
+
+        if "access_token" not in token:
+
+            logger.error(token)
+
+            raise Exception(
+                "Authentication Failed"
+            )
+
+        logger.info(
+            "Authentication Successful"
+        )
+
+        return token["access_token"]
