@@ -178,7 +178,6 @@ class FileRepository:
 
         )
 
-        self.db.commit()
 
     def update(self, file: FileMetadata):
 
@@ -266,7 +265,6 @@ class FileRepository:
 
         )
 
-        self.db.commit()
 
     def delete(self, file_id):
 
@@ -277,7 +275,6 @@ class FileRepository:
 
         self.db.cursor.execute(query, file_id)
 
-        self.db.commit()
 
     def close(self):
 

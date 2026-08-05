@@ -9,29 +9,31 @@ class Database:
     def __init__(self):
 
         connection_string = (
-
             "DRIVER={ODBC Driver 17 for SQL Server};"
-
             f"SERVER={Config.SQL_SERVER};"
-
             f"DATABASE={Config.SQL_DATABASE};"
-
             "Trusted_Connection=yes;"
         )
 
-        self.connection = pyodbc.connect(
-            connection_string
-        )
+        self.connection = pyodbc.connect(connection_string)
+
+        self.connection.autocommit = False
 
         self.cursor = self.connection.cursor()
 
-        logger.info(
-            "Connected to SQL Server"
-        )
+        logger.info("Connected to SQL Server")
 
     def commit(self):
 
         self.connection.commit()
+
+        logger.info("Transaction Committed")
+
+    def rollback(self):
+
+        self.connection.rollback()
+
+        logger.info("Transaction Rolled Back")
 
     def close(self):
 
@@ -39,6 +41,4 @@ class Database:
 
         self.connection.close()
 
-        logger.info(
-            "Database connection closed"
-        )
+        logger.info("Database Connection Closed")
