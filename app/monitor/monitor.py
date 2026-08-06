@@ -1,30 +1,26 @@
-from app.database import Database
+from app.services.sharepoint_sync_service import SharePointSyncService
+from app.utils.logger import logger
 
 
 class Monitor:
 
-    def __init__(self):
+    def run(self):
 
-        self.db = Database()
+        logger.info("=" * 60)
+        logger.info("Starting SharePoint Monitor")
+        logger.info("=" * 60)
 
-    def sync(self, files):
+        service = SharePointSyncService()
 
-        inserted = 0
+        result = service.sync()
 
-        skipped = 0
+        logger.info("")
+        logger.info("Synchronization Summary")
+        logger.info("-" * 60)
+        logger.info(f"New Files       : {len(result.new_files)}")
+        logger.info(f"Modified Files  : {len(result.modified_files)}")
+        logger.info(f"Deleted Files   : {len(result.deleted_files)}")
+        logger.info(f"Unchanged Files : {len(result.unchanged_files)}")
+        logger.info(f"Total Files     : {result.total_files}")
 
-        for file in files:
-
-            if self.db.file_exists(file["id"]):
-
-                skipped += 1
-
-            else:
-
-                self.db.insert_file(file)
-
-                inserted += 1
-
-        self.db.close()
-
-        return inserted, skipped
+        return result

@@ -3,15 +3,13 @@ from app.services.sharepoint_sync_service import SharePointSyncService
 
 def main():
 
-    print("=" * 60)
+    print("=" * 70)
     print("SYNC SERVICE TEST")
-    print("=" * 60)
+    print("=" * 70)
 
     service = SharePointSyncService()
 
-    graph = service.authenticate()
-
-    sharepoint_files = service.crawl_sharepoint(graph)
+    sharepoint_files = service.crawl_sharepoint()
 
     sql_files = service.load_database_snapshot()
 
@@ -23,7 +21,7 @@ def main():
 
     print()
 
-    print("=" * 60)
+    print("=" * 70)
 
 
 if __name__ == "__main__":

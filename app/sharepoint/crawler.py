@@ -20,29 +20,31 @@ class SharePointCrawler:
 
                 return drive
 
-        raise Exception(
-            "Document Library not found."
-        )
+        raise Exception("Document Library not found.")
 
-    def crawl_drive(self, drive, files=None):
+    def crawl_drive(self, drive):
 
-        if files is None:
-
-            files = []
+        files = []
 
         self.__crawl_folder(
 
-            drive["id"],
+            drive_id=drive["id"],
 
-            "root",
+            folder_id="root",
 
-            "",
+            current_path="",
 
-            drive["id"],
+            current_drive=drive["id"],
 
-            drive.get("sharepointIds", {}).get("siteId", ""),
+            current_site=drive.get(
+                "sharepointIds",
+                {}
+            ).get(
+                "siteId",
+                ""
+            ),
 
-            files
+            files=files
 
         )
 
@@ -86,6 +88,32 @@ class SharePointCrawler:
 
             is_folder = "folder" in item
 
+            # -----------------------------
+            # Recurse into folders
+            # -----------------------------
+            if is_folder:
+
+                self.__crawl_folder(
+
+                    drive_id=drive_id,
+
+                    folder_id=item["id"],
+
+                    current_path=path,
+
+                    current_drive=current_drive,
+
+                    current_site=current_site,
+
+                    files=files
+
+                )
+
+                continue
+
+            # -----------------------------
+            # Store ONLY files
+            # -----------------------------
             files.append(
 
                 FileMetadata(
@@ -94,7 +122,7 @@ class SharePointCrawler:
 
                     name=item["name"],
 
-                    item_type="Folder" if is_folder else "File",
+                    item_type="File",
 
                     parent_path=current_path,
 
@@ -149,21 +177,3 @@ class SharePointCrawler:
                 )
 
             )
-
-            if is_folder:
-
-                self.__crawl_folder(
-
-                    drive_id,
-
-                    item["id"],
-
-                    path,
-
-                    current_drive,
-
-                    current_site,
-
-                    files
-
-                )

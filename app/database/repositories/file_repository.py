@@ -6,15 +6,16 @@ from app.models.file_metadata import FileMetadata
 
 class FileRepository:
 
-    def __init__(self):
+    def __init__(self, db: Database):
 
-        self.db = Database()
+        self.db = db
 
     def get_all(self):
 
         query = """
         SELECT *
         FROM SharePointFiles
+        ORDER BY Name
         """
 
         self.db.cursor.execute(query)
@@ -25,58 +26,33 @@ class FileRepository:
 
         for row in rows:
 
-            files.append(
-
-                FileMetadata(
-
-                    file_id=row.FileId,
-
-                    name=row.Name,
-
-                    item_type=row.ItemType,
-
-                    parent_path=row.ParentPath,
-
-                    web_url=row.WebUrl,
-
-                    drive_id=row.DriveId,
-
-                    site_id=row.SiteId,
-
-                    size=row.Size,
-
-                    etag=row.ETag,
-
-                    ctag=row.CTag,
-
-                    created_date=row.CreatedDate,
-
-                    modified_date=row.ModifiedDate,
-
-                    created_by=row.CreatedBy,
-
-                    modified_by=row.ModifiedBy,
-
-                    downloaded=row.Downloaded,
-
-                    download_path=row.DownloadPath,
-
-                    status=row.Status,
-
-                    last_scan=row.LastScan
-
-                )
-
-            )
+            files.append(self.__map_row_to_file(row))
 
         return files
+
+    def get_by_file_id(self, file_id):
+
+        query = """
+        SELECT *
+        FROM SharePointFiles
+        WHERE FileId = ?
+        """
+
+        self.db.cursor.execute(query, file_id)
+
+        row = self.db.cursor.fetchone()
+
+        if row is None:
+            return None
+
+        return self.__map_row_to_file(row)
 
     def exists(self, file_id):
 
         query = """
         SELECT COUNT(*)
         FROM SharePointFiles
-        WHERE FileId=?
+        WHERE FileId = ?
         """
 
         self.db.cursor.execute(query, file_id)
@@ -88,51 +64,28 @@ class FileRepository:
         query = """
         INSERT INTO SharePointFiles
         (
-
             FileId,
-
             Name,
-
             ItemType,
-
             ParentPath,
-
             WebUrl,
-
             DriveId,
-
             SiteId,
-
             Size,
-
             ETag,
-
             CTag,
-
             CreatedDate,
-
             ModifiedDate,
-
             CreatedBy,
-
             ModifiedBy,
-
             Downloaded,
-
             DownloadPath,
-
             Status,
-
             LastScan
-
         )
-
         VALUES
-
         (
-
             ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?
-
         )
         """
 
@@ -178,49 +131,29 @@ class FileRepository:
 
         )
 
-
     def update(self, file: FileMetadata):
 
         query = """
         UPDATE SharePointFiles
-
         SET
-
-            Name=?,
-
-            ItemType=?,
-
-            ParentPath=?,
-
-            WebUrl=?,
-
-            DriveId=?,
-
-            SiteId=?,
-
-            Size=?,
-
-            ETag=?,
-
-            CTag=?,
-
-            CreatedDate=?,
-
-            ModifiedDate=?,
-
-            CreatedBy=?,
-
-            ModifiedBy=?,
-
-            Downloaded=?,
-
-            DownloadPath=?,
-
-            Status=?,
-
-            LastScan=?
-
-        WHERE FileId=?
+            Name = ?,
+            ItemType = ?,
+            ParentPath = ?,
+            WebUrl = ?,
+            DriveId = ?,
+            SiteId = ?,
+            Size = ?,
+            ETag = ?,
+            CTag = ?,
+            CreatedDate = ?,
+            ModifiedDate = ?,
+            CreatedBy = ?,
+            ModifiedBy = ?,
+            Downloaded = ?,
+            DownloadPath = ?,
+            Status = ?,
+            LastScan = ?
+        WHERE FileId = ?
         """
 
         self.db.cursor.execute(
@@ -265,17 +198,53 @@ class FileRepository:
 
         )
 
-
     def delete(self, file_id):
 
         query = """
         DELETE FROM SharePointFiles
-        WHERE FileId=?
+        WHERE FileId = ?
         """
 
         self.db.cursor.execute(query, file_id)
 
+    def __map_row_to_file(self, row):
 
-    def close(self):
+        return FileMetadata(
 
-        self.db.close()
+            file_id=row.FileId,
+
+            name=row.Name,
+
+            item_type=row.ItemType,
+
+            parent_path=row.ParentPath,
+
+            web_url=row.WebUrl,
+
+            drive_id=row.DriveId,
+
+            site_id=row.SiteId,
+
+            size=row.Size,
+
+            etag=row.ETag,
+
+            ctag=row.CTag,
+
+            created_date=row.CreatedDate,
+
+            modified_date=row.ModifiedDate,
+
+            created_by=row.CreatedBy,
+
+            modified_by=row.ModifiedBy,
+
+            downloaded=row.Downloaded,
+
+            download_path=row.DownloadPath,
+
+            status=row.Status,
+
+            last_scan=row.LastScan
+
+        )
